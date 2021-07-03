@@ -1,10 +1,8 @@
-import React, { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import * as dgraph from "dgraph-js-http";
 import ReactFlow, {
-  addEdge,
   removeElements,
   updateEdge,
-  isNode,
 } from "react-flow-renderer";
 // import Form from "./add-todo-form";
 import AddNode from "./AddNode";
@@ -17,16 +15,14 @@ const initialElements = [
   { id: "e1-2", source: "1", target: "2" },
 ];
 
-const UpdateNode = (model) => {
+const UpdateNode = () => {
   //control whether to show add node form
 
   const [elements, setElements] = useState([]);
-  // const [nodeName, setNodeName] = useState("node 1 ");
-  // const [nodeBg, setNodeBg] = useState("#eee");
-  // const [nodeHidden, setNodeHidden] = useState(false);
   const clientStub = new dgraph.DgraphClientStub("http://localhost:8080");
   const Dgraph = new dgraph.DgraphClient(clientStub);
   // fetchAndInform()
+
 
   const onChanges = [];
 
@@ -39,12 +35,28 @@ const UpdateNode = (model) => {
     let temp = [];
     for (let i = 0; i < rfObject.length; i++) {
       if (!rfObject[i]["ReactFlowElement.position"]) continue;
+      //add node
       const addedNode = {
         id: rfObject[i]["uid"],
         data: { label: rfObject[i]["ReactFlowElement.data"] },
         position: rfObject[i]["ReactFlowElement.position"],
       };
       temp.push(addedNode);
+      //add edge if exists
+      if (
+        rfObject[i]["ReactFlowElement.connectTo"] &&
+        rfObject[i]["ReactFlowElement.connectTo"] != undefined
+      ) {
+        const addedEdge = {
+          id:
+            rfObject[i]["uid"] +
+            (rfObject[i]["ReactFlowElement.connectTo"]["uid"] || ""),
+          source: rfObject[i]["uid"],
+          target: rfObject[i]["ReactFlowElement.connectTo"]["uid"],
+        };
+        console.log(addedEdge);
+        temp.push(addedEdge);
+      }
     }
     return temp;
   };
@@ -70,7 +82,7 @@ const UpdateNode = (model) => {
     //   }
   }, [elements]);
 
-  //获取dgraph data
+  //获取dgraph data, there is a easier way using recurse, but let's hardcode for now
   const fetchTodos = async () => {
     const query = `{
     todos(func: has(ReactFlowElement.data))
@@ -81,6 +93,14 @@ const UpdateNode = (model) => {
               x
               y
           }
+    ReactFlowElement.connectTo {
+      uid
+      ReactFlowElement.data
+      ReactFlowElement.position {
+                x
+                y
+            }
+      }
     }
   }`;
     const res = await Dgraph.newTxn().query(query);
@@ -92,6 +112,15 @@ const UpdateNode = (model) => {
     fetchTodos().then((elements) => setElements(convert(elements)));
   }, []);
 
+  //helper method to convert single element node to dgraph data type in json
+  const toDgraph = ({ data, position }) => {
+    const p = {
+      uid: "_:newTodo",
+      "ReactFlowElement.data": data,
+      "ReactFlowElement.position": position,
+    };
+    return p;
+  };
   //create new to-do items in Dgraph
   //创建transaction 与 mutation
   const add_Todo = async ({ data, position }) => {
@@ -101,6 +130,7 @@ const UpdateNode = (model) => {
         uid: "_:newTodo",
         "ReactFlowElement.data": data,
         "ReactFlowElement.position": position,
+        "ReactFlowElement.connectTo": null,
       };
       console.log(p["ReactFlowElement.position"]);
 
@@ -123,31 +153,56 @@ const UpdateNode = (model) => {
   };
 
   //delet nodes in Dgraph
-	const destroy = async (id) => {
-		try {
-      console.log(id)
-		  await Dgraph.newTxn().mutate({
-			deleteJson: {
-			  uid: id,
-        "ReactFlowElement.data": null,
-        "ReactFlowElement.position": null
-			},
-			commitNow: true,
-		  })
-		} catch (error) {
-		  alert('Database write failed!')
-		  console.error('Network error', error)
-		} finally {
-		  fetchAndInform()
-		}
-	}
+  const destroy = async (ele) => {
+    if (ele["source"]) deleteEle(ele);
+    else {
+      try {
+        console.log(ele);
+        await Dgraph.newTxn().mutate({
+          deleteJson: {
+            uid: ele.id,
+            "ReactFlowElement.data": null,
+            "ReactFlowElement.position": null,
+          },
+          commitNow: true,
+        });
+      } catch (error) {
+        alert("Database write failed!");
+        console.error("Network error", error);
+      } finally {
+        fetchAndInform();
+      }
+    }
+  };
 
   //reactflow offical remove
   const onElementsRemove = (elementsToRemove) =>
     setElements((els) => removeElements(elementsToRemove, els));
 
-  const deleteEle = (id) => {
-    setElements(elements.filter((el) => el.id !== id));
+  const deleteEle = async (ele) => {
+    try {
+      console.log(ele);
+      await Dgraph.newTxn().mutate({
+        deleteJson: {
+          uid: ele.source,
+          "ReactFlowElement.connectTo": null,
+        },
+        commitNow: true,
+      });
+
+      await Dgraph.newTxn().mutate({
+        deleteJson: {
+          uid: ele.target,
+          "ReactFlowElement.connectTo": null,
+        },
+        commitNow: true,
+      });
+    } catch (error) {
+      alert("Database write failed!");
+      console.error("Network error", error);
+    } finally {
+      fetchAndInform();
+    }
   };
 
   // //add edge
@@ -156,10 +211,59 @@ const UpdateNode = (model) => {
   // }
 
   //called when user connects two nodes
-  const onConnect = (params) => setElements((els) => addEdge(params, els));
+  const onConnect = (params) => {
+    console.log(params);
+    save(params);
+  };
   //called when the end of an edge gets dragged to another source or target
   const onEdgeUpdate = (oldEdge, newConnection) =>
     setElements((els) => updateEdge(oldEdge, newConnection, els));
+
+  //helper method to convert to dgraph data type
+  const convertDgraph = (node) => {
+    console.log(node);
+    //add node
+    console.log(node.id);
+    const addedNode = {
+      uid: node["id"],
+      "ReactFlowElement.data": node["data"]["label"],
+      "ReactFlowElement.position": node["position"],
+    };
+
+    return addedNode;
+  };
+  //通过另一个transaction修改一个node
+  const save = async (params) => {
+    try {
+      //get source node and target node
+      let sourceNode = elements.find((el) => el.id === params.source);
+      let targetNode = elements.find((el) => el.id === params.target);
+      let sourceDg = convertDgraph(sourceNode);
+      let targetDg = convertDgraph(targetNode);
+      console.log(sourceDg);
+      await Dgraph.newTxn().mutate({
+        setJson: {
+          uid: sourceDg.uid,
+          //Dgraph update无需pass整个object，返回最新的title，其它的predicates值不变
+          "ReactFlowElement.connectTo": targetDg,
+        },
+        commitNow: true,
+      });
+
+      await Dgraph.newTxn().mutate({
+        setJson: {
+          uid: targetDg.uid,
+          //Dgraph update无需pass整个object，返回最新的title，其它的predicates值不变
+          "ReactFlowElement.connectTo": sourceDg,
+        },
+        commitNow: true,
+      });
+    } catch (error) {
+      console.error("Network error", error);
+    } finally {
+      fetchAndInform();
+    }
+  };
 
   return (
     <ReactFlow
@@ -169,7 +273,7 @@ const UpdateNode = (model) => {
       maxZoom={4}
       onEdgeUpdate={onEdgeUpdate}
       onConnect={onConnect}
-      onElementsRemove={onElementsRemove}
+      onElementsRemove={destroy}
     >
       <div className="updatenode__controls">
         {/* form to show input */}

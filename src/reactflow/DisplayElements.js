@@ -12,7 +12,7 @@ const Element = ({ el, onDelete }) => {
             {el.id}{" "}
             <FaTimes
               style={{ color: "red", cursor: "pointer" }}
-              onClick={() => onDelete(el.id)}
+              onClick={() => onDelete(el)}
             />
           </h3>
           <p>{el.data.label}</p>
@@ -27,7 +27,7 @@ const Element = ({ el, onDelete }) => {
             {el.id}{" "}
             <FaTimes
               style={{ color: "red", cursor: "pointer" }}
-              onClick={() => onDelete(el.id)}
+              onClick={() => onDelete(el)}
             />
           </h3>
           <p>{el.source}</p>

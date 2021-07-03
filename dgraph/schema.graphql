@@ -1,12 +1,10 @@
-type Task {
+type ReactFlowElement {
     id: ID!
-    title: String!
-    completed: Boolean! @search
-    user: User!
+    data: String!
+    position: Position!
 }
 
-type User {
-    username: String! @id
-    name: String
-    tasks: [Task] @hasInverse(field: user)
+type Position {
+    x: Int!
+    y: Int!
 }
