@@ -1,5 +1,4 @@
-import * as dgraph from 'dgraph-js-http'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 const AddNode = ({onAdd}) => {
 
    
