@@ -1,163 +1,117 @@
-import React from 'react'
-import { createBrowserHistory } from 'history'
+import { useEffect, useState } from "react";
+import * as dgraph from "dgraph-js-http";
+import ReactFlow, {
+  isNode
+} from "react-flow-renderer";
+import { convert, createDgraphEdge, createDgraphNode, deleteDgraphElement, deleteDgraphEdge, getRFElementById } from "./Util/typeUtil"
+import { fetchTodos, save, destroy } from "./model";
+import { query, queryName } from "./Util/DqlUtil";
+import UpdateNode from './reactflow/updateNode'
 
-import defs from './defs'
-import TodoFooter from './TodoFooter'
-import TodoItem from './TodoItem'
-import UpdateNode from './reactflow/updateNote'
-// import AddNode from './reactflow/AddNode'
-const ENTER_KEY = 13
-const history = createBrowserHistory()
+const App = () => {
+  const [elements, setElements] = useState([]);
+  //get Dgraph client
+  const clientStub = new dgraph.DgraphClientStub("http://127.0.0.1:8080/");
+  const Dgraph = new dgraph.DgraphClient(clientStub);
+  //load the data for initialization
+  useEffect(() => {
+    fetchTodos(Dgraph, query).then((res) => setElements(convert(res.data[queryName])));
+  }, []);
 
-export default class TodoApp extends React.Component {
-  state = {
-    nowShowing: defs.ALL_TODOS,
-    editing: null,
-    newTodo: '',
-  }
+  const onChanges = [];
 
-  componentDidMount() {
-    const setNowShowingFn = nowShowing => () => this.setState({ nowShowing })
-
-    const routes = {
-      '/': setNowShowingFn(defs.ALL_TODOS),
-      '/active': setNowShowingFn(defs.ACTIVE_TODOS),
-      '/completed': setNowShowingFn(defs.COMPLETED_TODOS),
+  const inform = () => {
+    onChanges.forEach((cb) => cb());
+  };
+  
+  useEffect(() => {
+    elements.forEach(Object.freeze);
+    Object.freeze(elements);
+    inform();
+    return () => {
+      Dgraph.logout()
     }
+  }, [elements]);
 
-    const processLocationHash = hash => {
-      if (hash) {
-        hash = hash.substring(1)
+  //helper method, call fetchTodos 当web app loaded
+  const fetchAndInform = async () => {
+    const res = await fetchTodos(Dgraph, query);
+    const ele = res.data[queryName] || []
+    console.log("fetchAndInform received data")
+    setElements(convert(ele));
+    console.log(convert(ele));
+    //Object.freeze() 方法可以冻结一个对象。一个被冻结的对象再也不能被修改；
+    // 冻结了一个对象则不能向这个对象添加新的属性，不能删除已有属性，
+    // 不能修改该对象已有属性的可枚举性、可配置性、可写性，以及不能修改已有属性的值。
+    // 此外，冻结一个对象后该对象的原型也不能被修改。freeze() 返回和传入的参数相同的对象。
+  };
+
+  //create new to-do items in Dgraph
+  //创建transaction 与 mutation
+  const onAdd = async ({data, position}) => {
+    console.log(data)
+    try {
+      //abstraction needed
+      const p = createDgraphNode({data,position})
+      await save(Dgraph, p)
+    }
+    catch (error) {
+      alert("Database write failed!");
+      console.error("Network error", error);
+    } finally {
+      //reload
+      fetchAndInform();
+    }
+  };
+  ////called when user connects two nodes
+  const onConnect = async (params) => {
+    let sourceDg = getRFElementById(params.source, elements)
+    let targetDg = getRFElementById(params.target, elements)
+    console.log(sourceDg)
+    try {
+      const p = createDgraphEdge(sourceDg,targetDg);
+     await save(Dgraph, p)
+      console.log(elements)
+    }
+    catch (error) {
+      console.error("Network error", error);
+    } finally {
+      fetchAndInform();
+    }
+  };
+
+  const onDestroy = async (ele) => {
+    try {
+      let p;
+      if (isNode(ele))  {
+         p = deleteDgraphEdge(ele); 
+      } else  {
+         p = deleteDgraphElement(ele);
       }
-      const route = routes[hash] || routes['/']
-      route()
+      console.log(p)
+      destroy(Dgraph, p)
+
+    } catch (error) {
+      alert("Database write failed!");
+      console.error("Network error", error);
+    } finally {
+      fetchAndInform();
     }
-
-    processLocationHash(history.location.hash)
-
-    history.listen((location, action) =>
-      processLocationHash(location.hash)
-    )
-  }
-
-  handleChange = event =>
-    this.setState({ newTodo: event.target.value })
-
-  handleNewTodoKeyDown = event => {
-    if (event.keyCode !== ENTER_KEY) {
-      return
-    }
-
-    event.preventDefault()
-
-    const val = this.state.newTodo.trim()
-
-    if (val) {
-      this.props.model.addTodo(val)
-      this.setState({ newTodo: '' })
-    }
-  }
-
-  toggleAll = event => {
-    const checked = event.target.checked
-    this.props.model.toggleAll(checked)
-  }
-
-  toggle = todoToToggle =>
-    this.props.model.toggle(todoToToggle)
-
-  destroy = todo =>
-    this.props.model.destroy(todo)
-
-    //use Dgraph's uid field 来取代手动generate id
-  edit = todo =>
-    this.setState({ editing: todo.uid })
-
-  save = (todoToSave, text) => {
-    this.props.model.save(todoToSave, text)
-    this.setState({ editing: null })
-  }
-
-  cancel = () =>
-    this.setState({ editing: null })
-
-  clearCompleted = () =>
-    this.props.model.clearCompleted()
-
-  render() {
-    const { todos } = this.props.model
-    const { editing, newTodo } = this.state
-
-    const shownTodos = todos.filter(todo => {
-      switch (this.state.nowShowing) {
-        case defs.ACTIVE_TODOS:
-          return !todo.completed
-        case defs.COMPLETED_TODOS:
-          return todo.completed
-        default:
-          return true
-      }
-    })
-
-    //use Dgraph's uid field 来取代手动generate id
-    const todoItems = shownTodos.map(todo => (
-      <TodoItem
-        key={todo.uid}
-        todo={todo}
-        onToggle={() => this.toggle(todo)}
-        onDestroy={() => this.destroy(todo)}
-        onEdit={() => this.edit(todo)}
-        editing={editing === todo.uid}
-        onSave={text => this.save(todo, text)}
-        onCancel={this.cancel}
-      />
-    ))
-
-    const activeTodoCount = todos.reduce(function (accum, todo) {
-      return todo.completed ? accum : accum + 1
-    }, 0)
-
-    const completedCount = todos.length - activeTodoCount
-
-    const footer = (activeTodoCount || completedCount)
-      ? <TodoFooter
-          count={activeTodoCount}
-          completedCount={completedCount}
-          nowShowing={this.state.nowShowing}
-          onClearCompleted={this.clearCompleted}
-        />
-      : null
-
-    const main = !todos.length
-      ? null
-      : (
-        <section className="main">
-          <input
-            id="toggle-all"
-            className="toggle-all"
-            type="checkbox"
-            onChange={this.toggleAll}
-            checked={activeTodoCount === 0}
-          />
-          <label
-            htmlFor="toggle-all"
-          />
-          <ul className="todo-list">
-            {UpdateNode}
-          </ul>
-        </section>
-      )
-
+  };
     return (
       <div>
         <header className="header">
           <h1>todos</h1>
           
         </header>
-        <UpdateNode/>
-        {main}
-        {footer}
+        <UpdateNode
+        elements={elements}
+        onConnect={onConnect}
+        onDestroy={onDestroy}
+        onAdd={onAdd}
+        />
       </div>
     )
-  }
+  
 }
+export default App;

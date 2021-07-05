@@ -149,6 +149,7 @@ margin-bottom: 40px;
 margin-right: 0px;
 background-color:aliceblue;
 padding: 20px;
+align-self: flex-end;
 }
 
 .form-control {
