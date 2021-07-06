@@ -1,65 +1,27 @@
-
+import { Node, Edge, FlowElement } from "react-flow-renderer";
 
 //TS type
-type Position = {
+export type Position = {
     x: number,
     y: number
 };
-export abstract class ReactFlowElement {
-    id!: string;
-};
+
 enum handlePosition {
     'left',
     'right',
     'top',
     'bottom'
 }
-interface Data {
+export interface Data {
     label: string;
     onRemove: (id: string) => void;
 }
-export class Node extends ReactFlowElement {
-    data?: Data;
-    position!: Position;
-    type?: string;
-    style?: {};
-    className?: string;
-    targetPosition?: handlePosition// default: 'top'
-    sourcePosition?: handlePosition //default: 'bottom'
-    isHidden?: boolean // if true, the node will not be rendered
-    draggable?: boolean //- if option is not set, the node is draggable (overwrites general nodesDraggable option)
-    connectable?: boolean //- if option is not set, the node is connectable (overwrites general nodesConnectable option)
-    selectable?: boolean //- if option is not set, the node is selectable (overwrites general elementsSelectable option)
 
-
-}
-enum ArrowHeadType {
-    "arrow",
-    "arrowHead"
-}
-export class Edge extends ReactFlowElement {
-    source!: string;
-    target!: string;
-    arrowHeadType?: ArrowHeadType
-    type?: string;
-    animated?: boolean;
-    className?: string;
-    label?: string;
-    labelShowBg?: boolean;
-    labelBgStyle?: {}
-    labelBgPadding?: [number, number];
-    labelBgBorderRadius?: number;
-    markerEndId?: string;
-    isHidden?: boolean;
-    data?: Data;
-    markerStart?: string;
-
-}
 export type DgraphNode = {
-    uid: string,
-    "ReactFlowElement.data": string,
-    "ReactFlowElement.position": Position,
-    "ReactFlowElement.connectTo": DgraphNode
+    "uid": string,
+    "ReactFlowElement.data"?: string,
+    "ReactFlowElement.position"?: Position,
+    "ReactFlowElement.connectTo"?: DgraphNode
 }
 //helper method to convert object
 export const convert = (rfObject: Array<DgraphNode>, onRemove: (id: string) => Promise<void>) => {
@@ -80,9 +42,9 @@ export const convert = (rfObject: Array<DgraphNode>, onRemove: (id: string) => P
             const addedEdge = {
                 id:
                     rfObject[i]["uid"] +
-                    (rfObject[i]["ReactFlowElement.connectTo"]["uid"]),
+                    (rfObject[i]["ReactFlowElement.connectTo"]!["uid"]),
                 source: rfObject[i]["uid"],
-                target: rfObject[i]["ReactFlowElement.connectTo"]["uid"],
+                target: rfObject[i]["ReactFlowElement.connectTo"]!["uid"],
                 arrowHeadType: "arrow",
                 type: 'directedEdge',
                 data: { label: 'click to delete', "onRemove": onRemove },
@@ -94,7 +56,7 @@ export const convert = (rfObject: Array<DgraphNode>, onRemove: (id: string) => P
 };
 
 //helper method to convert to dgraph data type
-export const convertDgraph = (node: ReactFlowElement) => {
+export const convertDgraph = (node: FlowElement) => {
     console.log(node);
     //add node
     console.log(node.id);
@@ -103,15 +65,15 @@ export const convertDgraph = (node: ReactFlowElement) => {
     return addedNode;
 };
 
-export const createDgraphNode = (node: ReactFlowElement) => {
+export const createDgraphNode = (node: FlowElement) => {
     return ({
-        uid: node["id"] || "_:newTodo",
+        "uid": node["id"] || "_:newTodo",
         "ReactFlowElement.data": node["data"]["label"] || node["data"],
         "ReactFlowElement.position": node["position"],
     });
 }
 
-export const getRFElementById = (id: string, elements: ReactFlowElement[]) => {
+export const getDGElementById = (id: string, elements: FlowElement[]) => {
     let Node = elements.find((el) => el.id === id);
     if (Node !== undefined) {
         let Dg = convertDgraph(Node);
@@ -121,7 +83,7 @@ export const getRFElementById = (id: string, elements: ReactFlowElement[]) => {
 
 export const createDgraphEdge = (source: DgraphNode, target: DgraphNode) => {
     return ({
-        uid: source.uid,
+        "uid": source.uid,
         "ReactFlowElement.connectTo": target
     })
 }
@@ -129,7 +91,7 @@ export const createDgraphEdge = (source: DgraphNode, target: DgraphNode) => {
 export const deleteDgraphEdge = (edge: Edge) => {
     console.log(edge)
     return ({
-        uid: edge.source,
+        "uid": edge.source,
         "ReactFlowElement.connectTo": null
     });
 }
@@ -137,7 +99,7 @@ export const deleteDgraphEdge = (edge: Edge) => {
 export const deleteDgraphElement = (node: Node) => {
     console.log(node)
     return ({
-        uid: node.id,
+        "uid": node.id,
         "ReactFlowElement.data": null,
         "ReactFlowElement.position": null,
         "ReactFlowElement.connectTo": null,
@@ -147,7 +109,7 @@ export const deleteDgraphElement = (node: Node) => {
 export const deleteDgraphElementById = (id: string) => {
     //console.log(node)
     return ({
-        uid: id,
+        "uid": id,
         "ReactFlowElement.data": null,
         "ReactFlowElement.position": null,
         "ReactFlowElement.connectTo": null,

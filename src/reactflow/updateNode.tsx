@@ -5,22 +5,27 @@ import DisplayElements from "./DisplayElements";
 import { useEffect, useState } from "react";
 import * as dgraph from "dgraph-js-http";
 import ReactFlow, {
-  isNode
+  Connection,
+  Edge,
+  FlowElement,
+  isNode,
+  removeElements
 } from "react-flow-renderer";
-import { convert, createDgraphEdge, createDgraphNode, deleteDgraphElement, deleteDgraphEdge, getRFElementById, deleteDgraphElementById } from "../Util/typeUtil"
+import { convert, createDgraphEdge, createDgraphNode, deleteDgraphElement, deleteDgraphEdge, getDGElementById, deleteDgraphElementById } from "../Util/typeUtil"
 import { fetchTodos, save, destroy } from "../model";
 import { query, queryName } from "../Util/DqlUtil";
 import DirectedEdge from "./DirectedEdge"
-import { DeletableNode } from "./DeletableNode"
+import DeletableNode from "./DeletableNode"
+import * as customType from "../Util/typeUtil"
 const UpdateNode = () => {
 
-  const [elements, setElements] = useState([]);
+  const [elements, setElements] = useState<FlowElement[]>([]);
   //get Dgraph client
   const clientStub = new dgraph.DgraphClientStub("http://127.0.0.1:8080/");
-  const Dgraph = new dgraph.DgraphClient(clientStub);
+  const Dgraph: dgraph.DgraphClient = new dgraph.DgraphClient(clientStub);
   //load the data for initialization
 
-  const onChanges = [];
+  const onChanges: any[] = [];
 
   const inform = () => {
     onChanges.forEach((cb) => cb());
@@ -28,12 +33,12 @@ const UpdateNode = () => {
 
   //helper method, call fetchTodos 当web app loaded
   const fetchAndInform = async () => {
-    let txn = Dgraph.newTxn();
-    const res = await fetchTodos(txn, query);
-    const ele = res.data[queryName] || []
+    let txn: dgraph.Txn = Dgraph.newTxn();
+    const res = await fetchTodos(txn, query) || { data: "" };
+    const ele: customType.DgraphNode[] = res.data[queryName] || []
     console.log(ele);
     console.log(onRemove)
-    setElements(convert(ele, onRemove));
+    setElements(convert(ele, onRemove) as FlowElement[]);
     console.log(convert(ele, onRemove));
   };
 
@@ -59,41 +64,45 @@ const UpdateNode = () => {
 
   //create new to-do items in Dgraph
   //创建transaction 与 mutation
-  const onAdd = async ({ data, position }) => {
+  const onAdd = async ({ data, position }: { data: customType.Data, position: customType.Position }) => {
 
     const txn = Dgraph.newTxn();
     console.log(data)
     //abstraction needed
-    const p = createDgraphNode({ data, position })
+    const p = JSON.stringify(createDgraphNode({ id: '', data, position }))
     console.log(p)
-    await save(txn, p)
+    await save(txn, JSON.parse(p))
 
     fetchAndInform();
 
   };
   ////called when user connects two nodes
-  const onConnect = async (params) => {
-    let sourceDg = getRFElementById(params.source, elements)
-    let targetDg = getRFElementById(params.target, elements)
+  const onConnect = async (params: Edge | Connection) => {
+    let sourceDg = getDGElementById(params.source!, elements)
+    let targetDg = getDGElementById(params.target!, elements)
     console.log(sourceDg)
-    const txn = Dgraph.newTxn();
-    try {
-      const p = createDgraphEdge(sourceDg, targetDg);
-      await save(txn, p)
-      console.log(elements)
+    if (sourceDg && targetDg) {
+      const txn = Dgraph.newTxn();
+      try {
+        const p = JSON.stringify(createDgraphEdge(sourceDg, targetDg));
+        await save(txn, JSON.parse(p))
+        console.log(elements)
+      }
+      catch (error) {
+        console.error("Network error", error);
+      } finally {
+        fetchAndInform();
+      }
     }
-    catch (error) {
-      console.error("Network error", error);
-    } finally {
-      fetchAndInform();
-    }
+
   };
-  const onRemove = async (id) => {
-    let p = deleteDgraphElementById(id)
+  const onRemove = async (id: string) => {
+    let p = JSON.stringify(deleteDgraphElementById(id))
     const txn = Dgraph.newTxn();
     console.log("deleteDgraphElementById", p)
     try {
-      await destroy(txn, p)
+
+      await destroy(txn, JSON.parse(p))
     } catch (error) {
       alert("Database write failed!");
       console.error("Network error", error);
@@ -102,7 +111,7 @@ const UpdateNode = () => {
     }
   };
 
-  const onDestroy = async (ele) => {
+  const onDestroy = async (ele: FlowElement) => {
     const txn = Dgraph.newTxn();
     try {
       let p;
@@ -112,8 +121,9 @@ const UpdateNode = () => {
         p = deleteDgraphEdge(ele);
 
       }
+      p = JSON.stringify(p)
       console.log(p)
-      await destroy(txn, p)
+      await destroy(txn, JSON.parse(p))
 
     } catch (error) {
       alert("Database write failed!");
@@ -122,6 +132,9 @@ const UpdateNode = () => {
       fetchAndInform();
     }
   };
+  //TODO: implements ReactFlow's on ElemeentsRemove
+  const onElementsRemove = (elementsToRemove: FlowElement[]) => { }
+
   const nodeTypes = {
     deletableNode: DeletableNode,
   };
@@ -136,7 +149,7 @@ const UpdateNode = () => {
         minZoom={0.2}
         maxZoom={4}
         onConnect={onConnect}
-        onElementsRemove={onRemove}
+        onElementsRemove={onElementsRemove}
         edgeTypes={edgeTypes}
         nodeTypes={nodeTypes}
       >

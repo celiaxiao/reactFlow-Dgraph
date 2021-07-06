@@ -1,25 +1,30 @@
-import { memo } from 'react';
+import React, { FC, memo } from 'react';
 
-import { Handle, Position } from 'react-flow-renderer';
+import { EdgeProps, Handle, NodeProps, Position } from 'react-flow-renderer';
 import { FaTimes } from "react-icons/fa";
 import { Label } from 'semantic-ui-react';
 
-export const DeletableNode = ({ id, data }) => {
-  // console.log(data)
+const DeletableNode: FC<NodeProps> = (props) => {
+  const { id, data } = props;
+
   return (
-    <div style={{ borderStyle: "solid", borderWidth: "1px" }}>
+    <div style={{ borderStyle: "solid", borderWidth: "1px" }
+    }>
       <Handle type="source" position={Position.Bottom} />
       <Handle type="target" position={Position.Top} />
-      <Label className="ui basic label" border-style="double">
+      <Label className="ui basic label" borderStyle="double" >
 
         {data.label}
-        <FaTimes
+        < FaTimes
           style={{ color: "red", cursor: "pointer" }}
           onClick={() => data["onRemove"](id)}
         />
       </Label>
-    </div>
+    </div >
+
   );
+  // console.log(data)
+
 };
 
 export default memo(DeletableNode);
