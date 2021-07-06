@@ -1,4 +1,4 @@
-import { createNoSubstitutionTemplateLiteral } from "typescript";
+
 
 //TS type
 type Position = {
@@ -51,7 +51,7 @@ export class Edge extends ReactFlowElement {
     labelBgBorderRadius?: number;
     markerEndId?: string;
     isHidden?: boolean;
-    data?: {};
+    data?: Data;
     markerStart?: string;
 
 }
@@ -62,7 +62,7 @@ export type DgraphNode = {
     "ReactFlowElement.connectTo": DgraphNode
 }
 //helper method to convert object
-export const convert = (rfObject: Array<DgraphNode>, onRemove: (id: string) => void) => {
+export const convert = (rfObject: Array<DgraphNode>, onRemove: (id: string) => Promise<void>) => {
     let temp = [];
     console.log(onRemove)
     for (let i = 0; i < rfObject.length; i++) {
@@ -84,6 +84,8 @@ export const convert = (rfObject: Array<DgraphNode>, onRemove: (id: string) => v
                 source: rfObject[i]["uid"],
                 target: rfObject[i]["ReactFlowElement.connectTo"]["uid"],
                 arrowHeadType: "arrow",
+                type: 'directedEdge',
+                data: { label: 'click to delete', "onRemove": onRemove },
             };
             temp.push(addedEdge);
         }

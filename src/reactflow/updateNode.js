@@ -19,10 +19,6 @@ const UpdateNode = () => {
   const clientStub = new dgraph.DgraphClientStub("http://127.0.0.1:8080/");
   const Dgraph = new dgraph.DgraphClient(clientStub);
   //load the data for initialization
-  useEffect(() => {
-    const txn = Dgraph.newTxn();
-    fetchTodos(txn, query).then((res) => setElements(convert(res.data[queryName])));
-  }, []);
 
   const onChanges = [];
 
@@ -30,8 +26,28 @@ const UpdateNode = () => {
     onChanges.forEach((cb) => cb());
   };
 
+  //helper method, call fetchTodos 当web app loaded
+  const fetchAndInform = async () => {
+    let txn = Dgraph.newTxn();
+    const res = await fetchTodos(txn, query);
+    const ele = res.data[queryName] || []
+    console.log(ele);
+    console.log(onRemove)
+    setElements(convert(ele, onRemove));
+    console.log(convert(ele, onRemove));
+  };
+
+  useEffect(() => {
+    // const txn = Dgraph.newTxn();
+    fetchAndInform()
+  }, []);
+
   useEffect(() => {
     const txn = Dgraph.newTxn();
+    //Object.freeze() 方法可以冻结一个对象。一个被冻结的对象再也不能被修改；
+    // 冻结了一个对象则不能向这个对象添加新的属性，不能删除已有属性，
+    // 不能修改该对象已有属性的可枚举性、可配置性、可写性，以及不能修改已有属性的值。
+    // 此外，冻结一个对象后该对象的原型也不能被修改。freeze() 返回和传入的参数相同的对象。
     elements.forEach(Object.freeze);
     Object.freeze(elements);
     inform();
@@ -40,45 +56,6 @@ const UpdateNode = () => {
     }
   }, [elements]);
 
-  //helper method, call fetchTodos 当web app loaded
-  const fetchAndInform = async () => {
-    let txn = Dgraph.newTxn();
-    const res = await fetchTodos(txn, query);
-    const ele = res.data[queryName] || []
-    console.log(ele);
-    let temp = [];
-    console.log(onRemove)
-    for (let i = 0; i < ele.length; i++) {
-      console.log("data is like: ", { label: ele[i]["ReactFlowElement.data"], "onRemove": onRemove })
-      //add node
-      const addedNode = {
-        id: ele[i]["uid"],
-        data: { label: ele[i]["ReactFlowElement.data"], "onRemove": onRemove },
-        position: ele[i]["ReactFlowElement.position"],
-        type: 'deletableNode',
-      };
-      temp.push(addedNode);
-      //add edge if exists
-      if (ele[i]["ReactFlowElement.connectTo"]) {
-        const addedEdge = {
-          id:
-            ele[i]["uid"] +
-            (ele[i]["ReactFlowElement.connectTo"]["uid"]),
-          source: ele[i]["uid"],
-          target: ele[i]["ReactFlowElement.connectTo"]["uid"],
-          arrowHeadType: "arrow",
-        };
-        temp.push(addedEdge);
-      }
-    }
-    setElements(temp)
-    //setElements(convert(ele, onRemove));
-    //console.log(convert(ele, onRemove));
-    //Object.freeze() 方法可以冻结一个对象。一个被冻结的对象再也不能被修改；
-    // 冻结了一个对象则不能向这个对象添加新的属性，不能删除已有属性，
-    // 不能修改该对象已有属性的可枚举性、可配置性、可写性，以及不能修改已有属性的值。
-    // 此外，冻结一个对象后该对象的原型也不能被修改。freeze() 返回和传入的参数相同的对象。
-  };
 
   //create new to-do items in Dgraph
   //创建transaction 与 mutation
@@ -148,18 +125,23 @@ const UpdateNode = () => {
   const nodeTypes = {
     deletableNode: DeletableNode,
   };
+  const edgeTypes = {
+    directedEdge: DirectedEdge
+  }
   return (
+    <div style={{ width: '1000px', height: '700px' }}>
+      <ReactFlow
+        elements={elements}
+        defaultZoom={1.5}
+        minZoom={0.2}
+        maxZoom={4}
+        onConnect={onConnect}
+        onElementsRemove={onRemove}
+        edgeTypes={edgeTypes}
+        nodeTypes={nodeTypes}
+      >
 
-    <ReactFlow
-      elements={elements}
-      defaultZoom={1.5}
-      minZoom={0.2}
-      maxZoom={4}
-      onConnect={onConnect}
-      onElementsRemove={onDestroy}
-      edgeTypes={DirectedEdge}
-      nodeTypes={nodeTypes}
-    >
+      </ReactFlow>
       <div className="updatenode__controls">
         {/* form to show input */}
         <div className="display_node">
@@ -172,8 +154,7 @@ const UpdateNode = () => {
           )}
         </div>
       </div>
-    </ReactFlow>
-
+    </div>
   );
 };
 

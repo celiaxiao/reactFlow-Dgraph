@@ -1,14 +1,13 @@
-import React, { memo, FC, CSSProperties } from 'react';
+import { memo } from 'react';
 
-import { NodeComponentProps, Connection, Handle, Position } from 'react-flow-renderer';
-import { destroy } from '../model';
+import { Handle, Position } from 'react-flow-renderer';
 import { FaTimes } from "react-icons/fa";
 import { Label } from 'semantic-ui-react';
 
 export const DeletableNode = ({ id, data }) => {
-  console.log(data)
+  // console.log(data)
   return (
-    <>
+    <div style={{ borderStyle: "solid", borderWidth: "1px" }}>
       <Handle type="source" position={Position.Bottom} />
       <Handle type="target" position={Position.Top} />
       <Label className="ui basic label" border-style="double">
@@ -19,7 +18,7 @@ export const DeletableNode = ({ id, data }) => {
           onClick={() => data["onRemove"](id)}
         />
       </Label>
-    </>
+    </div>
   );
 };
 
