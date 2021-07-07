@@ -1,6 +1,11 @@
 import { useState } from 'react'
-import { Node, Edge, FlowElement, isNode } from "react-flow-renderer";
-const AddNode = (onAdd: (node: Node) => void) => {
+import { Node } from "react-flow-renderer";
+
+interface AddNodeProps {
+    onAdd: (node: Node) => void
+}
+
+const AddNode = (props: AddNodeProps) => {
 
 
     const [data, setData] = useState('default label')
@@ -11,14 +16,14 @@ const AddNode = (onAdd: (node: Node) => void) => {
     const onSubmit = (e: any) => {
         e.preventDefault()
 
-        if (!positionX || !positionY || !data) {
-            alert('missing one of the following: data or position')
-            return
-        }
+        // if (!positionX || !positionY || !data) {
+        //     alert('missing one of the following: data or position')
+        //     return
+        // }
         let position = { x: positionX, y: positionY }
         //give a default id, wait for submission to get Dgraph generated uid
         let newNode: Node = { id: '_newNode', data, position }
-        onAdd(newNode)
+        props.onAdd(newNode)
         setData('default data')
         setPositionX(0)
         setPositionY(0)

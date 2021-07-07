@@ -29,24 +29,25 @@ export type DgraphNode = {
 export const DgraphNodesToFlowElements = (dgNodes: Array<DgraphNode>, onRemove: (id: string) => void) => {
     let temp = [];
     console.log(onRemove)
-    for (let node in dgNodes) {
-        console.log("data is like: ", { label: node["ReactFlowElement.data"], "onRemove": onRemove })
+    for (let i = 0; i < dgNodes.length; i++) {
+        console.log(dgNodes[i])
+        // console.log("data is like: ", { label: dgNodes[i]["ReactFlowElement.data"], "onRemove": onRemove })
         //add node
         const addedNode = {
-            id: node["uid"],
-            data: { label: node["ReactFlowElement.data"], "onRemove": onRemove },
-            position: node["ReactFlowElement.position"],
+            id: dgNodes[i]["uid"],
+            data: { label: dgNodes[i]["ReactFlowElement.data"], "onRemove": onRemove },
+            position: dgNodes[i]["ReactFlowElement.position"],
             type: 'deletableNode',
         };
         temp.push(addedNode);
         //add edge if exists
-        if (node["ReactFlowElement.connectTo"]) {
+        if (dgNodes[i]["ReactFlowElement.connectTo"]) {
             const addedEdge = {
                 id:
-                    node["uid"] +
-                    (node["ReactFlowElement.connectTo"]!["uid"]),
-                source: node["uid"],
-                target: node["ReactFlowElement.connectTo"]!["uid"],
+                    dgNodes[i]["uid"] +
+                    (dgNodes[i]["ReactFlowElement.connectTo"]!["uid"]),
+                source: dgNodes[i]["uid"],
+                target: dgNodes[i]["ReactFlowElement.connectTo"]!["uid"],
                 arrowHeadType: "arrow",
                 type: 'directedEdge',
                 data: { label: 'click to delete', "onRemove": onRemove },
@@ -54,6 +55,7 @@ export const DgraphNodesToFlowElements = (dgNodes: Array<DgraphNode>, onRemove: 
             temp.push(addedEdge);
         }
     }
+    console.log(temp)
     return temp;
 };
 //helper method to convert list of Flowelements to a list of Dgraph Nodes
@@ -74,6 +76,7 @@ export const FlowElementsToDgraphNodes = (elements: FlowElement[]) => {
         }
 
     }
+    return temp;
 }
 //helper method to convert single Flowelement to a single Dgraph Node
 export const FlowElementToDgraph = (node: FlowElement) => {
@@ -87,7 +90,7 @@ export const FlowElementToDgraph = (node: FlowElement) => {
 
 export const createDgraphNode = (node: FlowElement) => {
     return ({
-        "uid": node["id"] || "_:newTodo",
+        "uid": (node["id"].startsWith("random")) ? "_:newTodo" : node["id"],
         "ReactFlowElement.data": node["data"]["label"] || node["data"],
         "ReactFlowElement.position": node["position"],
     });

@@ -20,7 +20,7 @@ const DirectedEdge: FC<EdgeProps> = ({
   const edgePath = getBezierPath({ sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition });
   const markerEnd = getMarkerEnd(arrowHeadType, markerEndId);
 
-  console.log(data)
+  // console.log(data)
   return (
     <>
       <path id={id} className="react-flow__edge-path" d={edgePath} markerEnd={markerEnd} markerStart={markerEnd} />

@@ -1,8 +1,9 @@
 import { isNode } from "react-flow-renderer";
 import { FaTimes } from "react-icons/fa";
-
+import { FlowElement } from "react-flow-renderer";
 //display single element
 const Element = ({ el, onDelete }) => {
+  // console.log(el)
   return (
     <div>
       {isNode(el) ? (
@@ -12,7 +13,7 @@ const Element = ({ el, onDelete }) => {
             {el.id}{" "}
             <FaTimes
               style={{ color: "red", cursor: "pointer" }}
-              onClick={() => onDelete(el)}
+              onClick={() => onDelete(el.id)}
             />
           </h3>
           <p>{el.data.label}</p>
@@ -27,7 +28,7 @@ const Element = ({ el, onDelete }) => {
             {el.id}{" "}
             <FaTimes
               style={{ color: "red", cursor: "pointer" }}
-              onClick={() => onDelete(el)}
+              onClick={() => onDelete(el.id)}
             />
           </h3>
           <p>{el.source}</p>

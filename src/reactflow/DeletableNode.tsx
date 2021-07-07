@@ -12,7 +12,7 @@ const DeletableNode: FC<NodeProps> = (props) => {
     }>
       <Handle type="source" position={Position.Bottom} />
       <Handle type="target" position={Position.Top} />
-      <Label className="ui basic label" borderStyle="double" >
+      <Label className="ui basic label" borderstyle="double" >
 
         {data.label}
         < FaTimes
