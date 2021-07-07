@@ -1,4 +1,4 @@
-import { Node, Edge, FlowElement } from "react-flow-renderer";
+import { Node, Edge, FlowElement, isNode } from "react-flow-renderer";
 
 //TS type
 export type Position = {
@@ -12,7 +12,7 @@ enum handlePosition {
     'top',
     'bottom'
 }
-export interface Data {
+export interface DeletableData {
     label: string;
     onRemove: (id: string) => void;
 }
@@ -21,30 +21,32 @@ export type DgraphNode = {
     "uid": string,
     "ReactFlowElement.data"?: string,
     "ReactFlowElement.position"?: Position,
-    "ReactFlowElement.connectTo"?: DgraphNode
+    "ReactFlowElement.connectTo"?: DgraphNode,
+    "ReactFlowElement.type"?: string,
 }
-//helper method to convert object
-export const convert = (rfObject: Array<DgraphNode>, onRemove: (id: string) => Promise<void>) => {
+
+//helper method to convert list of elements to lists of Dgaph Nodes
+export const DgraphNodesToFlowElements = (dgNodes: Array<DgraphNode>, onRemove: (id: string) => void) => {
     let temp = [];
     console.log(onRemove)
-    for (let i = 0; i < rfObject.length; i++) {
-        console.log("data is like: ", { label: rfObject[i]["ReactFlowElement.data"], "onRemove": onRemove })
+    for (let node in dgNodes) {
+        console.log("data is like: ", { label: node["ReactFlowElement.data"], "onRemove": onRemove })
         //add node
         const addedNode = {
-            id: rfObject[i]["uid"],
-            data: { label: rfObject[i]["ReactFlowElement.data"], "onRemove": onRemove },
-            position: rfObject[i]["ReactFlowElement.position"],
+            id: node["uid"],
+            data: { label: node["ReactFlowElement.data"], "onRemove": onRemove },
+            position: node["ReactFlowElement.position"],
             type: 'deletableNode',
         };
         temp.push(addedNode);
         //add edge if exists
-        if (rfObject[i]["ReactFlowElement.connectTo"]) {
+        if (node["ReactFlowElement.connectTo"]) {
             const addedEdge = {
                 id:
-                    rfObject[i]["uid"] +
-                    (rfObject[i]["ReactFlowElement.connectTo"]!["uid"]),
-                source: rfObject[i]["uid"],
-                target: rfObject[i]["ReactFlowElement.connectTo"]!["uid"],
+                    node["uid"] +
+                    (node["ReactFlowElement.connectTo"]!["uid"]),
+                source: node["uid"],
+                target: node["ReactFlowElement.connectTo"]!["uid"],
                 arrowHeadType: "arrow",
                 type: 'directedEdge',
                 data: { label: 'click to delete', "onRemove": onRemove },
@@ -54,9 +56,27 @@ export const convert = (rfObject: Array<DgraphNode>, onRemove: (id: string) => P
     }
     return temp;
 };
+//helper method to convert list of Flowelements to a list of Dgraph Nodes
+export const FlowElementsToDgraphNodes = (elements: FlowElement[]) => {
+    let temp: any[] = [];
+    for (let ele of elements) {
+        let dgNode;
+        //add node
+        if (isNode(ele)) {
+            dgNode = createDgraphNode(ele);
+            temp.push(dgNode)
+            //add edge
+        } else {
+            let sourceDg = temp.find((node) => node.uid === (ele as Edge).source)
+            let targetDg = temp.find((node) => node.uid === (ele as Edge).target)
+            dgNode = createDgraphEdge(sourceDg, targetDg)
+            temp.push(dgNode)
+        }
 
-//helper method to convert to dgraph data type
-export const convertDgraph = (node: FlowElement) => {
+    }
+}
+//helper method to convert single Flowelement to a single Dgraph Node
+export const FlowElementToDgraph = (node: FlowElement) => {
     console.log(node);
     //add node
     console.log(node.id);
@@ -74,13 +94,15 @@ export const createDgraphNode = (node: FlowElement) => {
 }
 
 export const getDGElementById = (id: string, elements: FlowElement[]) => {
-    let Node = elements.find((el) => el.id === id);
+    let Node = getFlowElementById(id, elements);
     if (Node !== undefined) {
-        let Dg = convertDgraph(Node);
+        let Dg = FlowElementToDgraph(Node);
         return Dg;
     }
 }
-
+export const getFlowElementById = (id: string, elements: FlowElement[]) => {
+    return elements.find((el) => el.id === id);
+}
 export const createDgraphEdge = (source: DgraphNode, target: DgraphNode) => {
     return ({
         "uid": source.uid,
@@ -98,12 +120,7 @@ export const deleteDgraphEdge = (edge: Edge) => {
 
 export const deleteDgraphElement = (node: Node) => {
     console.log(node)
-    return ({
-        "uid": node.id,
-        "ReactFlowElement.data": null,
-        "ReactFlowElement.position": null,
-        "ReactFlowElement.connectTo": null,
-    });
+    return deleteDgraphElementById(node.id)
 }
 
 export const deleteDgraphElementById = (id: string) => {

@@ -5,14 +5,15 @@ import DisplayElements from "./DisplayElements";
 import { useEffect, useState } from "react";
 import * as dgraph from "dgraph-js-http";
 import ReactFlow, {
+  addEdge,
   Connection,
   Edge,
+  Node,
   FlowElement,
-  isNode,
   removeElements
 } from "react-flow-renderer";
-import { convert, createDgraphEdge, createDgraphNode, deleteDgraphElement, deleteDgraphEdge, getDGElementById, deleteDgraphElementById } from "../Util/typeUtil"
-import { fetchTodos, save, destroy } from "../model";
+import { DgraphNodesToFlowElements, } from "../Util/typeUtil"
+import { fetchTodos } from "../model";
 import { query, queryName } from "../Util/DqlUtil";
 import DirectedEdge from "./DirectedEdge"
 import DeletableNode from "./DeletableNode"
@@ -37,9 +38,9 @@ const UpdateNode = () => {
     const res = await fetchTodos(txn, query) || { data: "" };
     const ele: customType.DgraphNode[] = res.data[queryName] || []
     console.log(ele);
-    console.log(onRemove)
-    setElements(convert(ele, onRemove) as FlowElement[]);
-    console.log(convert(ele, onRemove));
+    console.log(onElementsRemove)
+    setElements(DgraphNodesToFlowElements(ele, RemoveElementById) as FlowElement[]);
+    console.log(DgraphNodesToFlowElements(ele, RemoveElementById));
   };
 
   useEffect(() => {
@@ -61,80 +62,30 @@ const UpdateNode = () => {
     }
   }, [elements]);
 
+  const onAdd = (ele: Node) => {
+    //random id with timestamp
+    const getNodeId = () => `randomnode_${+new Date()}`;
+    const newNode = {
+      id: getNodeId(),
+      data: { label: ele.data },
+      position: {
+        x: ele.position.x,
+        y: ele.position.y,
+      },
+    };
+    setElements((els) => els.concat(newNode));
+  }
 
-  //create new to-do items in Dgraph
-  //创建transaction 与 mutation
-  const onAdd = async ({ data, position }: { data: customType.Data, position: customType.Position }) => {
+  const onConnect = (params: Edge<any> | Connection) => setElements((els) => addEdge(params, els));
 
-    const txn = Dgraph.newTxn();
-    console.log(data)
-    //abstraction needed
-    const p = JSON.stringify(createDgraphNode({ id: '', data, position }))
-    console.log(p)
-    await save(txn, JSON.parse(p))
+  const onElementsRemove = (elementsToRemove: FlowElement[]) => {
+    setElements((els) => removeElements(elementsToRemove, els));
+  }
 
-    fetchAndInform();
-
-  };
-  ////called when user connects two nodes
-  const onConnect = async (params: Edge | Connection) => {
-    let sourceDg = getDGElementById(params.source!, elements)
-    let targetDg = getDGElementById(params.target!, elements)
-    console.log(sourceDg)
-    if (sourceDg && targetDg) {
-      const txn = Dgraph.newTxn();
-      try {
-        const p = JSON.stringify(createDgraphEdge(sourceDg, targetDg));
-        await save(txn, JSON.parse(p))
-        console.log(elements)
-      }
-      catch (error) {
-        console.error("Network error", error);
-      } finally {
-        fetchAndInform();
-      }
-    }
-
-  };
-  const onRemove = async (id: string) => {
-    let p = JSON.stringify(deleteDgraphElementById(id))
-    const txn = Dgraph.newTxn();
-    console.log("deleteDgraphElementById", p)
-    try {
-
-      await destroy(txn, JSON.parse(p))
-    } catch (error) {
-      alert("Database write failed!");
-      console.error("Network error", error);
-    } finally {
-      fetchAndInform();
-    }
-  };
-
-  const onDestroy = async (ele: FlowElement) => {
-    const txn = Dgraph.newTxn();
-    try {
-      let p;
-      if (isNode(ele)) {
-        p = deleteDgraphElement(ele);
-      } else {
-        p = deleteDgraphEdge(ele);
-
-      }
-      p = JSON.stringify(p)
-      console.log(p)
-      await destroy(txn, JSON.parse(p))
-
-    } catch (error) {
-      alert("Database write failed!");
-      console.error("Network error", error);
-    } finally {
-      fetchAndInform();
-    }
-  };
-  //TODO: implements ReactFlow's on ElemeentsRemove
-  const onElementsRemove = (elementsToRemove: FlowElement[]) => { }
-
+  const RemoveElementById = (id: string) => {
+    // let eleToRemove = customType.getFlowElementById(id, elements)
+    setElements(elements.filter((el) => el.id != id));
+  }
   const nodeTypes = {
     deletableNode: DeletableNode,
   };
@@ -153,15 +104,15 @@ const UpdateNode = () => {
         edgeTypes={edgeTypes}
         nodeTypes={nodeTypes}
       >
-
       </ReactFlow>
+
       <div className="updatenode__controls">
         {/* form to show input */}
         <div className="display_node">
-          {<AddNode onAdd={onAdd} />}
+          {/* {<AddNode onAdd={onAdd} />} */}
           {/* form to show list of node value */}
           {elements.length > 0 ? (
-            <DisplayElements elements={elements} onDelete={onDestroy} />
+            <DisplayElements elements={elements} onDelete={onElementsRemove} />
           ) : (
             "No Node To Show"
           )}
