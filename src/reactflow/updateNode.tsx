@@ -84,7 +84,7 @@ const UpdateNode = () => {
 
   const RemoveElementById = (id: string) => {
     // let eleToRemove = customType.getFlowElementById(id, elements)
-    setElements(elements.filter((el) => el.id != id));
+    setElements(elements.filter((el) => el.id !== id));
   }
   const nodeTypes = {
     deletableNode: DeletableNode,
@@ -108,15 +108,7 @@ const UpdateNode = () => {
 
       <div className="updatenode__controls">
         {/* form to show input */}
-        <div className="display_node">
-          {/* {<AddNode onAdd={onAdd} />} */}
-          {/* form to show list of node value */}
-          {elements.length > 0 ? (
-            <DisplayElements elements={elements} onDelete={onElementsRemove} />
-          ) : (
-            "No Node To Show"
-          )}
-        </div>
+
       </div>
     </div>
   );
