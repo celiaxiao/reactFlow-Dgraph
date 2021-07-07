@@ -24,11 +24,13 @@ export type DgraphNode = {
     "ReactFlowElement.connectTo"?: DgraphNode,
     "ReactFlowElement.type"?: string,
 }
-
+export interface delListType {
+    id: string,
+    isNode: boolean,
+}
 //helper method to convert list of elements to lists of Dgaph Nodes
 export const DgraphNodesToFlowElements = (dgNodes: Array<DgraphNode>, onRemove: (id: string) => void) => {
     let temp = [];
-    console.log(onRemove)
     for (let i = 0; i < dgNodes.length; i++) {
         console.log(dgNodes[i])
         // console.log("data is like: ", { label: dgNodes[i]["ReactFlowElement.data"], "onRemove": onRemove })
@@ -113,14 +115,34 @@ export const createDgraphEdge = (source: DgraphNode, target: DgraphNode) => {
     })
 }
 
-export const deleteDgraphEdge = (edge: Edge) => {
-    console.log(edge)
+export const deleteDgraphEdgeById = (edgeSource: string) => {
     return ({
-        "uid": edge.source,
+        "uid": edgeSource,
         "ReactFlowElement.connectTo": null
     });
 }
 
+//@param: ele: {id: id for a Node or id for the sourceNode of an edge; isNode: whether this element is a node}
+export const getDeleteDgraphElementList = (ele: delListType[]) => {
+    let temp = []
+    for (let i = 0; i < ele.length; i++) {
+        let deleteEle = ele[i]
+        //if it's a node and exists in db, generated json for deleting a Dgraph Node
+        if (deleteEle.isNode && !deleteEle.id.startsWith("random")) {
+            temp.push(deleteDgraphElementById(deleteEle.id))
+        }
+        //if it's an edge, first check if the source will be deleted, or if the source exists in Dgraph 
+        //if not, generate json for deleting Dgraph predicate
+        else {
+            if (deleteEle.id.startsWith("random") || ele.find((el) => el.id === deleteEle.id && el.isNode)) {
+                break;
+            }
+            temp.push(deleteDgraphEdgeById(deleteEle.id))
+        }
+        // temp.push(deleteEle)
+    }
+    return temp
+}
 export const deleteDgraphElement = (node: Node) => {
     console.log(node)
     return deleteDgraphElementById(node.id)

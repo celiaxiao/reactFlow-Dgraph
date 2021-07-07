@@ -1,6 +1,6 @@
 import { Connection, Edge, FlowElement, isNode, Node } from "react-flow-renderer";
 import * as dgraph from 'dgraph-js-http'
-import { createDgraphEdge, createDgraphNode, DeletableData, deleteDgraphEdge, deleteDgraphElement, deleteDgraphElementById, getDGElementById } from "./typeUtil";
+import { createDgraphEdge, createDgraphNode, DeletableData, deleteDgraphEdgeById, deleteDgraphElement, deleteDgraphElementById, getDGElementById } from "./typeUtil";
 import { destroy, save } from "../model";
 //there is a easier way using recurse, but let's hardcode for now
 export const query = `{
@@ -41,7 +41,7 @@ export const onDestroy = async (txn: dgraph.Txn, ele: FlowElement) => {
   if (isNode(ele)) {
     p = deleteDgraphElement(ele);
   } else {
-    p = deleteDgraphEdge(ele);
+    p = deleteDgraphEdgeById(ele.source);
 
   }
   p = JSON.stringify(p)
@@ -62,7 +62,7 @@ export const onConnect = async (txn: dgraph.Txn, params: Edge | Connection, elem
 }
 
 //directly remove node from Dgraph by id; NOT recommanded
-export const RemoveElementById = async (txn: dgraph.Txn, id: string) => {
+export const RemoveDGElementById = async (txn: dgraph.Txn, id: string) => {
   let p = JSON.stringify(deleteDgraphElementById(id))
   console.log("deleteDgraphElementById", p)
   await destroy(txn, JSON.parse(p))

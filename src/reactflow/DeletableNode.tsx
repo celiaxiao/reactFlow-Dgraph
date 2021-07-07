@@ -6,7 +6,7 @@ import { Label } from 'semantic-ui-react';
 
 const DeletableNode: FC<NodeProps> = (props) => {
   const { id, data } = props;
-
+  console.log(data)
   return (
     <div style={{ borderStyle: "solid", borderWidth: "1px" }
     }>
@@ -17,7 +17,7 @@ const DeletableNode: FC<NodeProps> = (props) => {
         {data.label}
         < FaTimes
           style={{ color: "red", cursor: "pointer" }}
-          onClick={() => data["onRemove"](id)}
+          onClick={() => data.onRemove(id, data.currList)}
         />
       </Label>
     </div >
