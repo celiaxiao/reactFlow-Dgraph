@@ -35,7 +35,7 @@ export const destroy = async (txn: dgraph.Txn, jsonObj: JSON) => {
 };
 
 //update
-export const save = async (txn: dgraph.Txn, jsonObj: JSON) => {
+export const save = async (txn: dgraph.Txn, jsonObj: any) => {
   try {
     console.log(jsonObj)
     await txn.mutate({

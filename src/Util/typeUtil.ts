@@ -39,7 +39,7 @@ export const DgraphNodesToFlowElements = (dgNodes: Array<DgraphNode>, onRemove: 
             id: dgNodes[i]["uid"],
             data: { label: dgNodes[i]["ReactFlowElement.data"], "onRemove": onRemove },
             position: dgNodes[i]["ReactFlowElement.position"],
-            type: 'deletableNode',
+            type: dgNodes[i]["ReactFlowElement.type"],
         };
         temp.push(addedNode);
         //add edge if exists
@@ -62,22 +62,27 @@ export const DgraphNodesToFlowElements = (dgNodes: Array<DgraphNode>, onRemove: 
 };
 //helper method to convert list of Flowelements to a list of Dgraph Nodes
 export const FlowElementsToDgraphNodes = (elements: FlowElement[]) => {
-    let temp: any[] = [];
+    console.log(elements)
+    let temp: DgraphNode[] = [];
+    let tempJson = [];
     for (let ele of elements) {
         let dgNode;
         //add node
         if (isNode(ele)) {
             dgNode = createDgraphNode(ele);
             temp.push(dgNode)
+            tempJson.push(JSON.parse(JSON.stringify(dgNode)))
             //add edge
         } else {
             let sourceDg = temp.find((node) => node.uid === (ele as Edge).source)
             let targetDg = temp.find((node) => node.uid === (ele as Edge).target)
-            dgNode = createDgraphEdge(sourceDg, targetDg)
+            dgNode = createDgraphEdge(sourceDg!, targetDg!)
             temp.push(dgNode)
+            tempJson.push(JSON.parse(JSON.stringify(dgNode)))
         }
 
     }
+    console.log(temp)
     return temp;
 }
 //helper method to convert single Flowelement to a single Dgraph Node
@@ -86,15 +91,16 @@ export const FlowElementToDgraph = (node: FlowElement) => {
     //add node
     console.log(node.id);
     const addedNode = createDgraphNode(node);
-
     return addedNode;
 };
 
 export const createDgraphNode = (node: FlowElement) => {
+    let id = node.id;
     return ({
-        "uid": (node["id"].startsWith("random")) ? "_:newTodo" : node["id"],
+        "uid": (id.startsWith("random")) ? "_:" + id : id,
         "ReactFlowElement.data": node["data"]["label"] || node["data"],
         "ReactFlowElement.position": node["position"],
+        "ReactFlowElement.type": node.type
     });
 }
 
@@ -155,5 +161,6 @@ export const deleteDgraphElementById = (id: string) => {
         "ReactFlowElement.data": null,
         "ReactFlowElement.position": null,
         "ReactFlowElement.connectTo": null,
+        "ReactFlowElement.type": null,
     });
 }

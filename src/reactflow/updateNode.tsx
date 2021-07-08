@@ -73,9 +73,9 @@ const UpdateNode = () => {
     //reset delList
     setDelList([])
     txn = Dgraph.newTxn();
-    p = JSON.stringify(customType.FlowElementsToDgraphNodes(elements))
+    let pString = customType.FlowElementsToDgraphNodes(elements)
     //add new nodes
-    await save(txn, JSON.parse(p));
+    await save(txn, pString);
     //delete existing nodes
 
     //reload
@@ -93,7 +93,7 @@ const UpdateNode = () => {
         x: ele.position.x,
         y: ele.position.y,
       },
-      type: 'deletableNode'
+      type: ele.type
     };
     setElements((els) => els.concat(newNode));
   }, [elements])
@@ -130,6 +130,10 @@ const UpdateNode = () => {
     setElements((els) => els.filter((el) => (el.id !== id && (el as Edge).source !== id && (el as Edge).target !== id)));
   }, [])
 
+  //TODO: double click to edit
+  const onNodeDoubleClick = (event: MouseEvent, node: Node) => {
+
+  }
   const nodeTypes = {
     deletableNode: DeletableNode,
   };

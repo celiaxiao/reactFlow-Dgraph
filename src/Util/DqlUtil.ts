@@ -8,6 +8,7 @@ export const query = `{
         {
         uid
         ReactFlowElement.data
+        ReactFlowElement.type
         ReactFlowElement.position {
                   x
                   y
@@ -15,6 +16,7 @@ export const query = `{
         ReactFlowElement.connectTo {
           uid
           ReactFlowElement.data
+          ReactFlowElement.type
           ReactFlowElement.position {
                     x
                     y

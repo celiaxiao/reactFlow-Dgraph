@@ -6,7 +6,7 @@ import { Label } from 'semantic-ui-react';
 
 const DeletableNode: FC<NodeProps> = (props) => {
   const { id, data } = props;
-  console.log(data)
+  // console.log(data)
   return (
     <div style={{ borderStyle: "solid", borderWidth: "1px" }
     }>
