@@ -28,6 +28,22 @@ export interface delListType {
     id: string,
     isNode: boolean,
 }
+export interface AddNodeProps {
+    onAdd: (node: Node) => void
+}
+export const NodeTypeList = {
+    deletableNode: 'deletableNode',
+    input: 'input',
+    output: 'output',
+    default: 'default',
+}
+
+export interface UpdateNodeProps {
+    elements: FlowElement[],
+    setElements: React.Dispatch<React.SetStateAction<FlowElement<any>[]>>,
+    delList: delListType[],
+    setDelList: React.Dispatch<React.SetStateAction<delListType[]>>,
+}
 //helper method to convert list of elements to lists of Dgaph Nodes
 export const DgraphNodesToFlowElements = (dgNodes: Array<DgraphNode>, onRemove: (id: string) => void) => {
     let temp = [];

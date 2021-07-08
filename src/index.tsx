@@ -3,20 +3,19 @@ import ReactDOM from 'react-dom';
 import './index.css';
 import UpdateNode from './reactflow/updateNode';
 import reportWebVitals from './reportWebVitals';
+import 'antd/dist/antd.css';
+import '@ant-design/pro-layout/dist/layout.css';
+import App from './App';
+
+ReactDOM.render(
+  <App />,
+  document.getElementById('root'),
+);
 
 
 
 
 
-function render() {
-  ReactDOM.render(
-    // <TodoApp model={model}/>,
-    <UpdateNode />,
-    document.getElementById('root'),
-  )
-}
-
-render()
 
 // If you want to start measuring performance in your app, pass a function
 // to log results (for example: reportWebVitals(console.log))
