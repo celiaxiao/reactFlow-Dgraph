@@ -29,46 +29,18 @@ header {
   line-height: 1;
 }
 
-header a,
-header a:focus,
-header a:active,
-header a:visited {
-  color: #111;
-}
 
-header a:hover {
-  color: #333;
-}
-
-header select {
-  margin-left: 1em;
-}
-
-.overview-example__add {
-  display: none;
-}
-
-.react-flow__node a {
-  font-weight: 700;
-  color: #111;
-}
-
-.react-flow__node.dark-node {
-  background: #0041d0;
-  color: #f8f8f8;
-}
-
-.react-flow__node.dark {
-  background: #557;
-  color: #f8f8f8;
-}
 
 .react-flow__node-selectorNode {
   font-size: 12px;
-  background: #f0f2f3;
+  background: #ffffff;
   border: 1px solid 555;
   border-radius: 5px;
+  font-family: sans-serif;
   text-align: center;
+  border-style: "solid"; 
+  border-width: "1px";
+  
 }
 
 .react-flow__node-selectorNode .react-flow__handle {

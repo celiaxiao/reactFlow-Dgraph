@@ -1,9 +1,6 @@
 // import Form from "./add-todo-form";
-import AddNode from "./AddNode";
 import "./updateNode.css";
-import DisplayElements from "./DisplayElements";
-import { useCallback, useEffect, useState } from "react";
-import * as dgraph from "dgraph-js-http";
+import { useCallback, useState } from "react";
 import ReactFlow, {
   addEdge,
   Connection,
@@ -11,11 +8,13 @@ import ReactFlow, {
   Node,
   FlowElement,
   removeElements,
-  isNode
+  isNode,
+  MiniMap,
+  Background,
+  BackgroundVariant,
+  OnLoadParams,
+  Controls
 } from "react-flow-renderer";
-import { DgraphNodesToFlowElements, } from "../Util/typeUtil"
-import { destroy, fetchTodos, save } from "../model";
-import { query, queryName } from "../Util/DqlUtil";
 import DirectedEdge from "./DirectedEdge"
 import DeletableNode from "./DeletableNode"
 import * as customType from "../Util/typeUtil"
@@ -57,18 +56,38 @@ const UpdateNode = (props: customType.UpdateNodeProps) => {
   const edgeTypes = {
     directedEdge: DirectedEdge
   }
+  const nodeStrokeColor = (n: Node): string => {
+    if (n.style?.background) return n.style.background as string;
+    if (n.type === 'input') return '#0041d0';
+    if (n.type === 'output') return '#ff0072';
+    if (n.type === 'default') return '#1a192b';
+
+    return '#eee';
+  };
+
+  const nodeColor = (n: Node): string => {
+    if (n.style?.background) return n.style.background as string;
+
+    return '#fff';
+  };
+
   return (
-    <div style={{ width: 'auto', height: window.innerHeight }}>
+    <div style={{ width: 'auto', height: window.outerHeight }}>
       <ReactFlow
         elements={elements}
         defaultZoom={1.5}
         minZoom={0.2}
         maxZoom={4}
+
+        zoomOnDoubleClick={false}
         onConnect={onConnect}
         onElementsRemove={onElementsRemove}
         edgeTypes={edgeTypes}
         nodeTypes={nodeTypes}
       >
+        {/* <MiniMap nodeStrokeColor={nodeStrokeColor} nodeColor={nodeColor} nodeBorderRadius={2} />
+        <Controls />
+        <Background color="#aaa" gap={20} /> */}
       </ReactFlow>
 
       {/* <div className="updatenode__controls">

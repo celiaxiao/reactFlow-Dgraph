@@ -1,12 +1,20 @@
-import ProForm, { ProFormDateRangePicker, ProFormSelect, ProFormDigit, ProFormText } from "@ant-design/pro-form";
-import { message } from "antd";
+import ProForm, { ModalForm, ProFormSelect, ProFormDigit, ProFormText } from "@ant-design/pro-form";
+import { Button, message } from "antd";
 import { AddNodeProps, NodeTypeList } from "./Util/typeUtil";
 import { Node } from 'react-flow-renderer'
+import { PlusOutlined } from "@ant-design/icons";
 export const AddForm = (props: AddNodeProps) => {
 
     // console.log(NodeTypeList)
     return (
-        <ProForm<{}>
+        <ModalForm<{}>
+            title="AddNode"
+            trigger={
+                <Button type="primary">
+                    <PlusOutlined />
+                    Add a New Node
+                </Button>
+            }
             onFinish={async (values: any) => {
                 //get in info for new Node
                 let position = { x: values.positionX, y: values.positionY }
@@ -25,11 +33,11 @@ export const AddForm = (props: AddNodeProps) => {
                     dataLabel: 'default data',
                 };
             }}
-            onValuesChange={(changedValues, values) => {
+        // onValuesChange={(changedValues, values) => {
 
-                // console.log("changed value", changedValues)
-                // console.log("value", values)
-            }}
+        //     // console.log("changed value", changedValues)
+        //     // console.log("value", values)
+        // }}
         >
             <ProFormText
                 width="sm"
@@ -63,7 +71,7 @@ export const AddForm = (props: AddNodeProps) => {
                 initialValue='deletableNode'
             />
 
-        </ProForm>
+        </ModalForm>
     );
 
 }

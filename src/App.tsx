@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Button, Descriptions, Result, Avatar, Space, Statistic, Form } from 'antd';
-import { LikeOutlined, UserOutlined } from '@ant-design/icons';
+import { Button } from 'antd';
 import ProForm, { ProFormSelect } from '@ant-design/pro-form';
 import type { ProSettings } from '@ant-design/pro-layout';
 import ProLayout, { PageContainer, SettingDrawer } from '@ant-design/pro-layout';
@@ -101,7 +100,7 @@ export default () => {
 		setElements((els) => els.concat(newNode));
 	}, [elements])
 
-
+	//helper method for a node to delete itself
 	const RemoveElementById = useCallback((id: string) => {
 		console.log(id)
 		//if the element is already stored in database
@@ -115,17 +114,17 @@ export default () => {
 	}, [])
 
 	const content = (
-		<Descriptions size="small" column={2}>
-			<Descriptions.Item label="Creater">Celia</Descriptions.Item>
-			<div><AddForm onAdd={onAdd} /></div>
-		</Descriptions>
+		<div><AddForm onAdd={onAdd} />
+
+		</div>
+
 	);
 
 	return (
 		<div
 			id="test-pro-layout"
 			style={{
-				height: '100vh',
+				height: '70vh',
 			}}
 		>
 			<ProLayout
@@ -133,37 +132,7 @@ export default () => {
 				location={{
 					pathname,
 				}}
-				waterMarkProps={{
-					content: 'demo',
-				}}
-				menuFooterRender={(props) => {
-					return (
-						<a
-							style={{
-								lineHeight: '48rpx',
-								display: 'flex',
-								height: 48,
-								color: 'rgba(255, 255, 255, 0.65)',
-								alignItems: 'center',
-							}}
-							href="https://preview.pro.ant.design/dashboard/analysis"
-							target="_blank"
-							rel="noreferrer"
-						>
-							<img
-								alt="pro-logo"
-								src="https://procomponents.ant.design/favicon.ico"
-								style={{
-									width: 16,
-									height: 16,
-									margin: '0 16px',
-									marginRight: 10,
-								}}
-							/>
-							{!props?.collapsed && 'Preview Pro'}
-						</a>
-					);
-				}}
+
 				onMenuHeaderClick={(e) => console.log(e)}
 				menuItemRender={(item, dom) => (
 					<a
@@ -174,48 +143,31 @@ export default () => {
 						{dom}
 					</a>
 				)}
-				rightContentRender={() => (
-					<div>
-						<Avatar shape="square" size="small" icon={<UserOutlined />} />
-					</div>
-				)}
-				{...settings}
 			>
 				<PageContainer
 					content={content}
 					tabList={[
 						{
-							tab: 'ReactFlow displayment',
+							tab: 'ReactFlow Displayment',
 							key: 'base',
 						}
 					]}
 
 					footer={[
-						<Button key="3" onClick={loadFromDgraph}>重置</Button>,
+						<Button key="3" onClick={loadFromDgraph}>Reset</Button>,
 						<Button key="2" type="primary" onClick={submitToDgraph}>
-							提交
+							Save
 						</Button>,
 					]}
 				>
 
 					<div
-						style={{
-							height: '120vh',
-						}}
 					>
 						<UpdateNode elements={elements} setElements={setElements} delList={delList} setDelList={setDelList} />
 					</div>
 				</PageContainer>
 			</ProLayout>
-			<SettingDrawer
-				pathname={pathname}
-				getContainer={() => document.getElementById('test-pro-layout')}
-				settings={settings}
-				onSettingChange={(changeSetting) => {
-					setSetting(changeSetting);
-				}}
-				disableUrlParams
-			/>
+
 		</div>
 	);
 };

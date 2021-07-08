@@ -8,18 +8,33 @@ const DeletableNode: FC<NodeProps> = (props) => {
   const { id, data } = props;
   // console.log(data)
   return (
-    <div style={{ borderStyle: "solid", borderWidth: "1px" }
-    }>
+    <div className="react-flow__node-selectorNode"
+      style={{
+        borderStyle: "solid",
+        borderWidth: "1px",
+        borderColor: "#557"
+      }
+      }>
       <Handle type="source" position={Position.Bottom} />
       <Handle type="target" position={Position.Top} />
-      <Label className="ui basic label" borderstyle="double" >
 
-        {data.label}
-        < FaTimes
-          style={{ color: "red", cursor: "pointer" }}
-          onClick={() => data.onRemove(id, data.currList)}
-        />
-      </Label>
+      <FaTimes
+        style={{
+          color: "red",
+          cursor: "pointer",
+          position: "absolute",
+          top: "0",
+          right: "0",
+        }}
+
+        onClick={() => data.onRemove(id, data.currList)}
+      />
+      <label style={{
+        padding: "15px",
+        paddingRight: "15px",
+        paddingTop: "15px",
+        paddingBottom: "15px"
+      }}>{data.label}</label>
     </div >
 
   );

@@ -7,7 +7,7 @@ export default {
         routes: [
             {
                 path: '/welcome',
-                name: '欢迎',
+                name: 'Welcome',
                 icon: <SmileOutlined />,
                 component: './Welcome',
             },
